@@ -196,9 +196,7 @@ def load_single_models(args):
         args.pretrained_model_name_or_path), f"no pretrained model / 学習元モデルがありません : {args.pretrained_model_name_or_path}"
   if use_stable_diffusion_format:
     print("load StableDiffusion checkpoint")
-    text_encoder, _, unet = fine_tuning_utils.load_models_from_stable_diffusion_checkpoint(args.pretrained_model_name_or_path)
-    del _
-    print("deleted vae")
+    text_encoder, _, unet = fine_tuning_utils.load_models_from_stable_diffusion_checkpoint(args.pretrained_model_name_or_path, load_vae=False, load_text_model=args.clip_model_path)
     return text_encoder, unet
   else:
     print("load Diffusers pretrained models")
@@ -879,6 +877,8 @@ if __name__ == '__main__':
                       help="enable logging and output TensorBoard log to this directory / ログ出力を有効にしてこのディレクトリにTensorBoard用のログを出力する")
   parser.add_argument("--num_processes", type=int,
                       help="num processes/gpus")
+  parser.add_argument("--clip_model_path", type=str, default=None,
+                      help="Path to clip model directory")
 
   args = parser.parse_args()
   text_encoder, unet = load_single_models(args)

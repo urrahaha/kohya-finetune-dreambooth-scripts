@@ -520,8 +520,8 @@ def create_vae_diffusers_config():
   return config
 
 
-def convert_ldm_clip_checkpoint(checkpoint):
-  text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")
+def convert_ldm_clip_checkpoint(checkpoint, clip_model_path):
+  text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14" if clip_model_path is not None else clip_model_path)
 
   keys = list(checkpoint.keys())
 
@@ -660,28 +660,31 @@ def load_checkpoint_with_conversion(ckpt_path, map_location):
   return checkpoint
 
 
-def load_models_from_stable_diffusion_checkpoint(ckpt_path, accelerator: Accelerator = None):
+def load_models_from_stable_diffusion_checkpoint(ckpt_path, accelerator: Accelerator = None, load_unet=True, load_vae=True, load_text_model="openai"):
   device = accelerator.device if hasattr(accelerator, "device") else "cpu"
   print(device)
   checkpoint = load_checkpoint_with_conversion(ckpt_path, device)
   state_dict = checkpoint["state_dict"]
 
-  # Convert the UNet2DConditionModel model.
-  unet_config = create_unet_diffusers_config()
-  converted_unet_checkpoint = convert_ldm_unet_checkpoint(state_dict, unet_config)
+  if load_unet:
+    # Convert the UNet2DConditionModel model.
+    unet_config = create_unet_diffusers_config()
+    converted_unet_checkpoint = convert_ldm_unet_checkpoint(state_dict, unet_config)
 
-  unet = UNet2DConditionModel(**unet_config).to(device)
-  unet.load_state_dict(converted_unet_checkpoint)
+    unet = UNet2DConditionModel(**unet_config).to(device)
+    unet.load_state_dict(converted_unet_checkpoint)
 
-  # Convert the VAE model.
-  vae_config = create_vae_diffusers_config()
-  converted_vae_checkpoint = convert_ldm_vae_checkpoint(state_dict, vae_config)
+  if load_vae:
+    # Convert the VAE model.
+    vae_config = create_vae_diffusers_config()
+    converted_vae_checkpoint = convert_ldm_vae_checkpoint(state_dict, vae_config)
 
-  vae = AutoencoderKL(**vae_config).to(device)
-  vae.load_state_dict(converted_vae_checkpoint)
+    vae = AutoencoderKL(**vae_config).to(device)
+    vae.load_state_dict(converted_vae_checkpoint)
 
-  # convert text_model
-  text_model = convert_ldm_clip_checkpoint(state_dict).to(device)
+  if load_text_model:
+    # convert text_model
+    text_model = convert_ldm_clip_checkpoint(state_dict, load_text_model).to(device)
 
   return text_model, vae, unet
 

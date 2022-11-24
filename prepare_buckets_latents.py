@@ -55,7 +55,7 @@ def main(args):
   # モデルを読み込む
   if use_stable_diffusion_format:
     print("load StableDiffusion checkpoint")
-    _, vae, _ = fine_tuning_utils.load_models_from_stable_diffusion_checkpoint(args.model_name_or_path)
+    _, vae, _ = fine_tuning_utils.load_models_from_stable_diffusion_checkpoint(args.model_name_or_path, load_unet=False, load_text_model=False)
   else:
     print("load Diffusers pretrained models")
     vae = AutoencoderKL.from_pretrained(args.model_name_or_path, subfolder="vae")
