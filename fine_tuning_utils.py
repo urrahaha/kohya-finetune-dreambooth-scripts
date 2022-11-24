@@ -665,6 +665,8 @@ def load_models_from_stable_diffusion_checkpoint(ckpt_path, accelerator: Acceler
   print(device)
   checkpoint = load_checkpoint_with_conversion(ckpt_path, device)
   state_dict = checkpoint["state_dict"]
+  
+  text_model = vae = unet = None
 
   if load_unet:
     # Convert the UNet2DConditionModel model.
