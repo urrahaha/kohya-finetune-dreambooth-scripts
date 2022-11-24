@@ -530,7 +530,7 @@ def train(args, text_encoder, unet):
         ckpt_file = os.path.join(args.output_dir, LAST_CHECKPOINT_NAME)
         print(f"save trained model as StableDiffusion checkpoint to {ckpt_file}")
         fine_tuning_utils.save_stable_diffusion_checkpoint(
-            ckpt_file, text_encoder, unet, args.pretrained_model_name_or_path, epoch, global_step, save_dtype, accelerator)
+            ckpt_file, text_encoder, unet, args.pretrained_model_name_or_path, epoch, global_step, save_dtype)
       else:
         # Create the pipeline using using the trained modules and save it.
         print(f"save trained model as Diffusers to {args.output_dir}")
