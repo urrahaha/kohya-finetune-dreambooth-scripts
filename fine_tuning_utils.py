@@ -521,7 +521,7 @@ def create_vae_diffusers_config():
 
 
 def convert_ldm_clip_checkpoint(checkpoint, clip_model_path):
-  text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14" if clip_model_path is not None else clip_model_path)
+  text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14" if clip_model_path is None else clip_model_path)
 
   keys = list(checkpoint.keys())
 
