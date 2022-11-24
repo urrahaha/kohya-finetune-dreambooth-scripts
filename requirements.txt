@@ -1,0 +1,11 @@
+-i https://download.pytorch.org/whl/cu116
+torch==1.12.1+cu116
+torchvision==0.13.1+cu116
+timm==0.4.12
+transformers>=4.21.0
+fairscale==0.4.4
+ftfy
+albumentations
+opencv-python
+einops
+pytorch_lightning

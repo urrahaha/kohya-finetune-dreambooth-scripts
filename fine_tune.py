@@ -31,7 +31,7 @@ import importlib
 
 from tqdm import tqdm
 import torch
-from accelerate import Accelerator, init_empty_weights
+from accelerate import Accelerator, notebook_launcher
 from accelerate.utils import set_seed
 from transformers import CLIPTextModel, CLIPTokenizer
 import diffusers
@@ -189,7 +189,24 @@ def save_hypernetwork(output_file, hypernetwork):
   torch.save(state_dict, output_file)
 
 
-def train(args):
+def load_single_models(args):
+  use_stable_diffusion_format = os.path.isfile(args.pretrained_model_name_or_path)
+  if not use_stable_diffusion_format:
+    assert os.path.exists(
+        args.pretrained_model_name_or_path), f"no pretrained model / 学習元モデルがありません : {args.pretrained_model_name_or_path}"
+  if use_stable_diffusion_format:
+    print("load StableDiffusion checkpoint")
+    text_encoder, _, unet = fine_tuning_utils.load_models_from_stable_diffusion_checkpoint(args.pretrained_model_name_or_path)
+    del _
+    print("deleted vae")
+    return text_encoder, unet
+  else:
+    print("load Diffusers pretrained models")
+    text_encoder = CLIPTextModel.from_pretrained(args.pretrained_model_name_or_path, subfolder="text_encoder")
+    unet = UNet2DConditionModel.from_pretrained(args.pretrained_model_name_or_path, subfolder="unet")
+    return text_encoder, unet
+
+def train(args, text_encoder, unet):
   fine_tuning = args.hypernetwork_module is None            # fine tuning or hypernetwork training
 
   # モデル形式のオプション設定を確認する
@@ -245,16 +262,16 @@ def train(args):
   accelerator = Accelerator(gradient_accumulation_steps=args.gradient_accumulation_steps, mixed_precision=args.mixed_precision)
 
   # モデルを読み込む
-  if use_stable_diffusion_format:
-    print(accelerator.distributed_type)
-    print("load StableDiffusion checkpoint")
-    text_encoder, _, unet = fine_tuning_utils.load_models_from_stable_diffusion_checkpoint(args.pretrained_model_name_or_path, accelerator)
-    del _
-    print("deleted vae")
-  else:
-    print("load Diffusers pretrained models")
-    text_encoder = CLIPTextModel.from_pretrained(args.pretrained_model_name_or_path, subfolder="text_encoder")
-    unet = UNet2DConditionModel.from_pretrained(args.pretrained_model_name_or_path, subfolder="unet")
+  # if use_stable_diffusion_format:
+  #   print(accelerator.distributed_type)
+  #   print("load StableDiffusion checkpoint")
+  #   text_encoder, _, unet = fine_tuning_utils.load_models_from_stable_diffusion_checkpoint(args.pretrained_model_name_or_path, accelerator)
+  #   del _
+  #   print("deleted vae")
+  # else:
+  #   print("load Diffusers pretrained models")
+  #   text_encoder = CLIPTextModel.from_pretrained(args.pretrained_model_name_or_path, subfolder="text_encoder")
+  #   unet = UNet2DConditionModel.from_pretrained(args.pretrained_model_name_or_path, subfolder="unet")
 
   # モデルに xformers とか memory efficient attention を組み込む
   replace_unet_modules(unet, args.mem_eff_attn, args.xformers)
@@ -846,6 +863,9 @@ if __name__ == '__main__':
                       help="use output of nth layer from back of text encoder (n>=1) / text encoderの後ろからn番目の層の出力を用いる（nは1以上）")
   parser.add_argument("--debug_dataset", action="store_true",
                       help="show images for debugging (do not train) / デバッグ用に学習データを画面表示する（学習は行わない）")
+  parser.add_argument("--num_processes", type=int,
+                      help="num processes/gpus")
 
   args = parser.parse_args()
-  train(args)
+  text_encoder, unet = load_single_models(args)
+  notebook_launcher(train, (args, text_encoder, unet), num_processes = args.num_processes if args.num_processes is not None else 1)
