@@ -230,7 +230,7 @@ def train(args, text_encoder, unet):
 
   # tokenizerを読み込む
   print("prepare tokenizer")
-  tokenizer = CLIPTokenizer.from_pretrained(TOKENIZER_PATH)
+  tokenizer = CLIPTokenizer.from_pretrained(TOKENIZER_PATH if not args.clip_model_path else args.clip_model_path)
   if args.max_token_length is not None:
     print(f"update token length in tokenizer: {args.max_token_length}")
 
