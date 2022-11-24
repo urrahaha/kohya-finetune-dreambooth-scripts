@@ -616,6 +616,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--dump_path", default=None, type=str, required=True, help="Path to the output model.")
     parser.add_argument("--clip_model_path", default=None, type=str, help="Path to clip model directory")
+    parser.add_argument("--enable_safety_checker", default=True, type=bool, help="Set to False to disable safety checker, should speed up conversion due to not loading it")
 
     args = parser.parse_args()
 
@@ -671,17 +672,26 @@ if __name__ == "__main__":
     if text_model_type == "FrozenCLIPEmbedder":
         text_model = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14" if args.clip_model_path is None else args.clip_model_path)
         tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14" if args.clip_model_path is None else args.clip_model_path)
-        safety_checker = StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker")
-        feature_extractor = AutoFeatureExtractor.from_pretrained("CompVis/stable-diffusion-safety-checker")
-        pipe = StableDiffusionPipeline(
-            vae=vae,
-            text_encoder=text_model,
-            tokenizer=tokenizer,
-            unet=unet,
-            scheduler=scheduler,
-            safety_checker=safety_checker,
-            feature_extractor=feature_extractor,
-        )
+        if args.enable_safety_checker:
+            safety_checker = StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker")
+            feature_extractor = AutoFeatureExtractor.from_pretrained("CompVis/stable-diffusion-safety-checker")
+            pipe = StableDiffusionPipeline(
+                vae=vae,
+                text_encoder=text_model,
+                tokenizer=tokenizer,
+                unet=unet,
+                scheduler=scheduler,
+                safety_checker=safety_checker,
+                feature_extractor=feature_extractor,
+            )
+        else:
+            pipe = StableDiffusionPipeline(
+                vae=vae,
+                text_encoder=text_model,
+                tokenizer=tokenizer,
+                unet=unet,
+                scheduler=scheduler,
+            )
     else:
         text_config = create_ldm_bert_config(original_config)
         text_model = convert_ldm_bert_checkpoint(checkpoint, text_config)
