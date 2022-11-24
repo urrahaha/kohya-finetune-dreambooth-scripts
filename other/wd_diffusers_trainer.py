@@ -772,17 +772,30 @@ def main():
             if args.use_ema:
                 ema_unet.store(unet.parameters())
                 ema_unet.copy_to(unet.parameters())
-            pipeline = StableDiffusionPipeline(
-                text_encoder=text_encoder,
-                vae=vae,
-                unet=unet,
-                tokenizer=tokenizer,
-                scheduler=PNDMScheduler(
-                    beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", skip_prk_steps=True
-                ),
-                safety_checker=StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker"),
-                feature_extractor=CLIPFeatureExtractor.from_pretrained("openai/clip-vit-base-patch32"),
-            )
+            if args.enable_safety_checker:
+                pipeline = StableDiffusionPipeline(
+                    text_encoder=text_encoder,
+                    vae=vae,
+                    unet=unet,
+                    tokenizer=tokenizer,
+                    scheduler=PNDMScheduler(
+                        beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", skip_prk_steps=True
+                    ),
+                    safety_checker=StableDiffusionSafetyChecker.from_pretrained("CompVis/stable-diffusion-safety-checker"),
+                    feature_extractor=CLIPFeatureExtractor.from_pretrained("openai/clip-vit-base-patch32"),
+                )
+            else:
+                pipeline = StableDiffusionPipeline(
+                    text_encoder=text_encoder,
+                    vae=vae,
+                    unet=unet,
+                    tokenizer=tokenizer,
+                    scheduler=PNDMScheduler(
+                        beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear", skip_prk_steps=True
+                    ),
+                    safety_checker=None,
+                    feature_extractor=None,
+                )
             print(f'saving checkpoint to: {args.output_path}/{args.run_name}_{global_step}')
             pipeline.save_pretrained(f'{args.output_path}/{args.run_name}_{global_step}')
 
@@ -894,7 +907,7 @@ def main():
                                 tokenizer=tokenizer,
                                 scheduler=scheduler,
                                 safety_checker=None, # disable safety checker to save memory
-                                feature_extractor=CLIPFeatureExtractor.from_pretrained("openai/clip-vit-base-patch32"),
+                                feature_extractor=None # try to disable this too
                             ).to(device)
                             # inference
                             if args.enablewandb:
