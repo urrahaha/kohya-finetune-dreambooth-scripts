@@ -728,7 +728,10 @@ def save_stable_diffusion_checkpoint(output_file, text_encoder, unet, ckpt_path,
   new_ckpt['epoch'] = epochs
   new_ckpt['global_step'] = steps
 
-  torch.save(new_ckpt, output_file)
+  if accelerator:
+    accelerator.save(new_ckpt, output_file)
+  else:
+    torch.save(new_ckpt, output_file)
 # endregion
 
 
