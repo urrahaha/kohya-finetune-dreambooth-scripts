@@ -304,6 +304,7 @@ def train(args, text_encoder, unet):
     save_dtype = torch.bfloat16
   elif args.save_precision == "float":
     save_dtype = torch.float32
+  print(f"save_precision: {save_dtype}")
 
   # 学習を準備する：モデルを適切な状態にする
   training_models = []
